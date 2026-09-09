@@ -1,3 +1,23 @@
+import logging
+import os
+import asyncio
+import contextlib
+import datetime as dtm
+from typing import NoReturn
+
+from telegram import Update, ForceReply
+from telegram.ext import (
+    Application,
+    CommandHandler, 
+    ContextTypes,
+    MessageHandler,
+    filters
+    )
+from dotenv import load_dotenv
+#from openai import OpenAI
+
+import telegram_utils.basic_functions as bf
+
 
 
 # Define a few command handlers. These usually take the two arguments update and

@@ -14,9 +14,10 @@ from telegram.ext import (
     filters
     )
 from dotenv import load_dotenv
-from openai import OpenAI
+#from openai import OpenAI
 
-from telegram_utils.basic_functions as bf
+import telegram_utils.basic_functions as bf
+
 
 load_dotenv()
 API = os.getenv("TELEGRAM_API_KEY")
@@ -29,7 +30,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+def main(API) -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
     application = Application.builder().token(API).build()
@@ -49,4 +50,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(API)
