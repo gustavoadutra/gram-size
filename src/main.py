@@ -14,9 +14,8 @@ from telegram.ext import (
     filters
     )
 from dotenv import load_dotenv
-#from openai import OpenAI
 
-import telegram_utils.basic_functions as bf
+import utils.basic_functions as bf
 
 
 load_dotenv()
@@ -39,9 +38,9 @@ def main(API) -> None:
     application.add_handler(CommandHandler("start", bf.start))
     application.add_handler(CommandHandler("help", bf.help_command))
 
-    # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bf.echo))
-
+    # on non command i.e message - return info the message on Telegram
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bf.response))
+    
     # get the voice 
     application.add_handler(MessageHandler(filters.VOICE, bf.get_voice))
 

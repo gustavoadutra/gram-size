@@ -14,11 +14,11 @@ from telegram.ext import (
     filters
     )
 from dotenv import load_dotenv
-#from openai import OpenAI
 
-import telegram_utils.basic_functions as bf
+from .rag_handler import RAG
 
-
+# initiate rag whatever
+rag = RAG()
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -44,10 +44,14 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     voice = update.message.voice
-
     if voice:
         new_file = await context.bot.get_file(voice.file_id)
-
         await new_file.download_to_drive("teste.mp3")
-
         await update.message.reply_text(f"Audio salvo!")
+
+
+async def response(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Echo the user message."""
+    response = rag.generate_response(update.message.text)
+    await update.message.reply_text(response)
+    print(f"message: {update.message.text}")
