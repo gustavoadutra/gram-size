@@ -1,27 +1,10 @@
-"""
-Recursively scans a folder for PDF files, extracts the text from each page,
-generates embeddings with SentenceTransformer (splitting long pages into as
-many parts as needed to stay under MAX_TOKENS_PER_CHUNK tokens), and saves
-EVERYTHING into a single FAISS index, including the source book's path/name
-in each chunk.
-
-Requirements:
-    pip install pdfplumber sentence-transformers faiss-cpu --break-system-packages
-
-Usage:
-    python extract_folder_pdfs.py /path/to/folder_with_books
-    (generates livros.index + livros.metadata.json in the current folder, by default)
-
-    python extract_folder_pdfs.py /path/to/folder_with_books --out library
-    (generates library.index + library.metadata.json)
-"""
-from sentence_transformers import SentenceTransformer
-
 import argparse
 import json
 import math
 import os
 import sys
+
+from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
 import pdfplumber

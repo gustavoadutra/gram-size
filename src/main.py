@@ -1,15 +1,10 @@
 import logging
 import os
-import asyncio
-import contextlib
-import datetime as dtm
-from typing import NoReturn
 
-from telegram import Update, ForceReply
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler, 
-    ContextTypes,
     MessageHandler,
     filters
     )
