@@ -1,27 +1,16 @@
-import logging
-import os
-import asyncio
-import contextlib
-import datetime as dtm
-from typing import NoReturn
+
 
 from telegram import Update, ForceReply
 from telegram.ext import (
-    Application,
-    CommandHandler, 
     ContextTypes,
-    MessageHandler,
-    filters
     )
-from dotenv import load_dotenv
 
 from .rag_handler import RAG
 
-# initiate rag whatever
+# Initiate rag whatever
 rag = RAG()
 
-# Define a few command handlers. These usually take the two arguments update and
-# context.
+# Basic start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -31,17 +20,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+# TODO document all functionalities
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
     await update.message.reply_text("Help!")
 
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
-    print(f"message: {update.message.text}")
-
-
+# TODO posterior use with command by voice
 async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     voice = update.message.voice
     if voice:
@@ -51,7 +36,7 @@ async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def response(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
+    """Reply the user message with rag search and LLM text threatment."""
     response = rag.generate_response(update.message.text)
     await update.message.reply_text(response)
     print(f"message: {update.message.text}")

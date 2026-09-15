@@ -41,7 +41,7 @@ def main(API) -> None:
     # on non command i.e message - return info the message on Telegram
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bf.response))
     
-    # get the voice 
+    # get the voice for future use
     application.add_handler(MessageHandler(filters.VOICE, bf.get_voice))
 
     # Run the bot until the user presses Ctrl-C

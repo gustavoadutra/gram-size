@@ -1,19 +1,19 @@
 """
-Varre uma pasta RECURSIVAMENTE em busca de arquivos PDF, extrai o texto de
-cada página, gera embeddings com SentenceTransformer (dividindo páginas
-longas em quantas partes forem necessárias para ficar abaixo de
-MAX_TOKENS_PER_CHUNK tokens) e salva TUDO em um único índice FAISS,
-incluindo o caminho/nome do livro de origem em cada chunk.
+Recursively scans a folder for PDF files, extracts the text from each page,
+generates embeddings with SentenceTransformer (splitting long pages into as
+many parts as needed to stay under MAX_TOKENS_PER_CHUNK tokens), and saves
+EVERYTHING into a single FAISS index, including the source book's path/name
+in each chunk.
 
-Requisitos:
+Requirements:
     pip install pdfplumber sentence-transformers faiss-cpu --break-system-packages
 
-Uso:
-    python extract_folder_pdfs.py /caminho/para/pasta_com_livros
-    (gera livros.index + livros.metadata.json na pasta atual, por padrão)
+Usage:
+    python extract_folder_pdfs.py /path/to/folder_with_books
+    (generates livros.index + livros.metadata.json in the current folder, by default)
 
-    python extract_folder_pdfs.py /caminho/para/pasta_com_livros --out biblioteca
-    (gera biblioteca.index + biblioteca.metadata.json)
+    python extract_folder_pdfs.py /path/to/folder_with_books --out library
+    (generates library.index + library.metadata.json)
 """
 from sentence_transformers import SentenceTransformer
 
@@ -28,25 +28,25 @@ import pdfplumber
 
 MAX_TOKENS_PER_CHUNK = 512
 
-# Quantidade de páginas amostradas para decidir se um PDF é "escaneado".
+# Number of pages sampled to decide whether a PDF is "scanned".
 SCAN_SAMPLE_PAGES = 5
-# Média mínima de caracteres/página na amostra para considerar que o PDF
-# tem camada de texto de verdade (abaixo disso = provavelmente escaneado).
+# Minimum average characters/page in the sample to consider that the PDF
+# actually has a text layer (below that = probably scanned).
 SCAN_MIN_AVG_CHARS = 30
 
 
 def is_scanned_pdf(pdf_path: str, sample_pages: int = SCAN_SAMPLE_PAGES,
                     min_avg_chars: int = SCAN_MIN_AVG_CHARS) -> bool:
     """
-    Heurística rápida: abre o PDF, extrai texto de até `sample_pages`
-    páginas espalhadas pelo documento (início, meio, fim) e mede a média
-    de caracteres extraídos por página.
+    Quick heuristic: opens the PDF, extracts text from up to `sample_pages`
+    pages spread across the document (beginning, middle, end), and measures
+    the average number of characters extracted per page.
 
-    PDFs escaneados (imagem pura, sem OCR) tendem a retornar texto vazio
-    ou quase vazio em `extract_text()`. PDFs com camada de texto real
-    normalmente retornam centenas de caracteres por página.
+    Scanned PDFs (pure image, no OCR) tend to return empty or nearly empty
+    text from `extract_text()`. PDFs with a real text layer usually return
+    hundreds of characters per page.
 
-    Retorna True se o PDF parece ser escaneado (sem texto extraível).
+    Returns True if the PDF appears to be scanned (no extractable text).
     """
     with pdfplumber.open(pdf_path) as pdf:
         total_pages = len(pdf.pages)
@@ -57,7 +57,7 @@ def is_scanned_pdf(pdf_path: str, sample_pages: int = SCAN_SAMPLE_PAGES,
         if n == 1:
             indices = [0]
         else:
-            # espalha as amostras do início ao fim do livro
+            # spread the samples from the beginning to the end of the book
             indices = sorted(set(
                 round(i * (total_pages - 1) / (n - 1)) for i in range(n)
             ))
@@ -72,13 +72,13 @@ def is_scanned_pdf(pdf_path: str, sample_pages: int = SCAN_SAMPLE_PAGES,
 
 
 def split_text_into_parts(text: str, num_parts: int) -> list[str]:
-    """Divide o texto em `num_parts` pedaços aproximadamente iguais (por caracteres)."""
+    """Splits the text into `num_parts` roughly equal pieces (by characters)."""
     chunk_size = math.ceil(len(text) / num_parts)
     return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 def find_pdfs(root_dir: str) -> list[str]:
-    """Retorna, em ordem, os caminhos de todos os .pdf encontrados recursivamente."""
+    """Returns, in order, the paths of all .pdf files found recursively."""
     pdf_paths = []
     for dirpath, _dirnames, filenames in os.walk(root_dir):
         for filename in sorted(filenames):
@@ -88,15 +88,15 @@ def find_pdfs(root_dir: str) -> list[str]:
 
 
 def list_pages(pdf_path: str) -> int:
-    """Retorna o número total de páginas do PDF."""
+    """Returns the total number of pages in the PDF."""
     with pdfplumber.open(pdf_path) as pdf:
         return len(pdf.pages)
 
 
 def extract_page_text(pdf_path: str, page_number: int) -> str:
     """
-    Extrai o texto bruto de uma página (1-based).
-    Lança ValueError se o número da página for inválido.
+    Extracts the raw text from a page (1-based).
+    Raises ValueError if the page number is invalid.
     """
     with pdfplumber.open(pdf_path) as pdf:
         total_pages = len(pdf.pages)
@@ -111,11 +111,10 @@ def extract_page_text(pdf_path: str, page_number: int) -> str:
 
 def save_faiss_index(embeddings: np.ndarray, metadata: list[dict], index_path: str, metadata_path: str) -> None:
     """
-    Constrói um índice FAISS (similaridade de cosseno via inner product
-    normalizado) a partir de `embeddings` e salva em `index_path`. Como o
-    FAISS só guarda vetores, `metadata` (um dict por vetor, mesma ordem)
-    é salvo separadamente em JSON para mapear um resultado de busca de
-    volta ao livro/página/texto de origem.
+    Builds a FAISS index (cosine similarity via normalized inner product)
+    from `embeddings` and saves it to `index_path`. Since FAISS only stores
+    vectors, `metadata` (one dict per vector, same order) is saved separately
+    as JSON to map a search result back to the source book/page/text.
     """
     embeddings = np.asarray(embeddings, dtype="float32")
     faiss.normalize_L2(embeddings)
@@ -136,7 +135,7 @@ def save_faiss_index(embeddings: np.ndarray, metadata: list[dict], index_path: s
 
 
 def process_pdf(model: SentenceTransformer, pdf_path: str, book_id: int) -> tuple[list[np.ndarray], list[dict]]:
-    """Processa um único PDF e retorna (embeddings, metadata) de seus chunks."""
+    """Processes a single PDF and returns (embeddings, metadata) for its chunks."""
     total_pages = list_pages(pdf_path)
     book_name = os.path.splitext(os.path.basename(pdf_path))[0]
 
@@ -188,41 +187,41 @@ def process_pdf(model: SentenceTransformer, pdf_path: str, book_id: int) -> tupl
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gera um índice FAISS único a partir de todos os PDFs de uma pasta (recursivo)."
+        description="Builds a single FAISS index from all PDFs in a folder (recursive)."
     )
-    parser.add_argument("folder", help="Pasta raiz onde procurar os PDFs (recursivamente).")
+    parser.add_argument("folder", help="Root folder where to look for PDFs (recursively).")
     parser.add_argument(
         "--out", default="livros",
-        help="Prefixo de saída (gera <out>.index e <out>.metadata.json). Padrão: 'livros'."
+        help="Output prefix (generates <out>.index and <out>.metadata.json). Default: 'livros'."
     )
     parser.add_argument(
         "--model", default="intfloat/multilingual-e5-small",
-        help="Nome do modelo SentenceTransformer a usar."
+        help="Name of the SentenceTransformer model to use."
     )
     parser.add_argument(
         "--scan-sample", type=int, default=SCAN_SAMPLE_PAGES,
-        help=f"Nº de páginas amostradas para detectar livro escaneado (padrão: {SCAN_SAMPLE_PAGES})."
+        help=f"Number of pages sampled to detect a scanned book (default: {SCAN_SAMPLE_PAGES})."
     )
     parser.add_argument(
         "--scan-min-chars", type=int, default=SCAN_MIN_AVG_CHARS,
-        help=f"Média mínima de caracteres/página para considerar 'não escaneado' (padrão: {SCAN_MIN_AVG_CHARS})."
+        help=f"Minimum average characters/page to consider 'not scanned' (default: {SCAN_MIN_AVG_CHARS})."
     )
     parser.add_argument(
         "--include-scanned", action="store_true",
-        help="Não filtra livros escaneados (tenta processar mesmo assim; provavelmente gera chunks vazios/ruins)."
+        help="Do not filter out scanned books (tries to process them anyway; will probably generate empty/poor chunks)."
     )
     args = parser.parse_args()
 
     if not os.path.isdir(args.folder):
-        print(f"Erro: '{args.folder}' não é uma pasta válida.")
+        print(f"Error: '{args.folder}' is not a valid folder.")
         sys.exit(1)
 
     all_pdf_paths = find_pdfs(args.folder)
     if not all_pdf_paths:
-        print(f"Nenhum PDF encontrado em '{args.folder}'.")
+        print(f"No PDFs found in '{args.folder}'.")
         sys.exit(0)
 
-    print(f"Encontrados {len(all_pdf_paths)} PDF(s). Verificando quais têm camada de texto...")
+    print(f"Found {len(all_pdf_paths)} PDF(s). Checking which ones have a text layer...")
 
     pdf_paths = []
     scanned_paths = []
@@ -233,29 +232,29 @@ def main():
                 else is_scanned_pdf(p, args.scan_sample, args.scan_min_chars)
             )
         except Exception as exc:
-            print(f"  Aviso: não consegui abrir '{p}' para checagem ({exc}). Tratando como escaneado/ilegível.")
+            print(f"  Warning: could not open '{p}' for checking ({exc}). Treating as scanned/unreadable.")
             scanned = True
 
         if scanned:
             scanned_paths.append(p)
-            print(f"  [ESCANEADO?] {p}")
+            print(f"  [SCANNED?] {p}")
         else:
             pdf_paths.append(p)
-            print(f"  [OK]         {p}")
+            print(f"  [OK]       {p}")
 
     if scanned_paths:
         scanned_list_path = f"{args.out}.scanned_books.txt"
         with open(scanned_list_path, "w", encoding="utf-8") as f:
             f.write("\n".join(scanned_paths) + "\n")
         print(
-            f"\n{len(scanned_paths)} livro(s) parecem escaneados (sem texto extraível) "
-            f"e foram deixados de fora do índice. Lista salva em: {scanned_list_path}\n"
-            f"Para incluí-los mesmo assim, rode com --include-scanned "
-            f"(mas provavelmente vão gerar chunks vazios/ruins — considere rodar OCR neles primeiro)."
+            f"\n{len(scanned_paths)} book(s) appear to be scanned (no extractable text) "
+            f"and were left out of the index. List saved to: {scanned_list_path}\n"
+            f"To include them anyway, run with --include-scanned "
+            f"(but they will probably generate empty/poor chunks — consider running OCR on them first)."
         )
 
     if not pdf_paths:
-        print("\nTodos os PDFs encontrados parecem escaneados. Nada para indexar.")
+        print("\nAll PDFs found appear to be scanned. Nothing to index.")
         sys.exit(0)
 
     model = SentenceTransformer(args.model)
@@ -264,22 +263,22 @@ def main():
     all_metadata = []
 
     for book_id, pdf_path in enumerate(pdf_paths):
-        print(f"\n>>> Processando livro {book_id + 1}/{len(pdf_paths)}: {pdf_path}")
+        print(f"\n>>> Processing book {book_id + 1}/{len(pdf_paths)}: {pdf_path}")
         try:
             embeddings, metadata = process_pdf(model, pdf_path, book_id)
         except Exception as exc:
-            print(f"  Erro ao processar '{pdf_path}': {exc}. Pulando este arquivo.")
+            print(f"  Error processing '{pdf_path}': {exc}. Skipping this file.")
             continue
 
         if not embeddings:
-            print(f"  Nenhum texto extraído de '{pdf_path}'.")
+            print(f"  No text extracted from '{pdf_path}'.")
             continue
 
         all_embeddings.extend(embeddings)
         all_metadata.extend(metadata)
 
     if not all_embeddings:
-        print("Nenhum texto extraído de nenhum PDF, nada para salvar.")
+        print("No text extracted from any PDF, nothing to save.")
         sys.exit(0)
 
     index_path = f"{args.out}.index"
@@ -293,7 +292,7 @@ def main():
     )
 
     num_books = len({m["book_id"] for m in all_metadata})
-    print(f"\nProcessados {len(all_metadata)} chunk(s) de {num_books} livro(s) de um total de {len(pdf_paths)} PDF(s) encontrados.")
+    print(f"\nProcessed {len(all_metadata)} chunk(s) from {num_books} book(s) out of {len(pdf_paths)} PDF(s) found.")
 
 
 if __name__ == "__main__":
