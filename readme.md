@@ -1,4 +1,4 @@
-# Brian - Fisio Telegram Bot
+# Brian - Fisio RAG
 
 A Retrieval-Augmented Generation (RAG) system designed to assist physiotherapists by providing instant, accurate answers retrieved directly from authoritative physiotherapy, anatomy, and medical textbooks through an interactive Telegram bot.
 
