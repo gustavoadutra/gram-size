@@ -9,8 +9,10 @@ import numpy as np
 import faiss
 import pdfplumber
 
+# Size for multilingual-e5-small
 MAX_TOKENS_PER_CHUNK = 512
 
+# Simple filtering books
 # Number of pages sampled to decide whether a PDF is "scanned".
 SCAN_SAMPLE_PAGES = 5
 # Minimum average characters/page in the sample to consider that the PDF
@@ -47,6 +49,7 @@ def is_scanned_pdf(pdf_path: str, sample_pages: int = SCAN_SAMPLE_PAGES,
 
         char_counts = []
         for idx in indices:
+            # x tolerance 2 get by texts
             text = pdf.pages[idx].extract_text(x_tolerance=2) or ""
             char_counts.append(len(text.strip()))
 
@@ -57,6 +60,8 @@ def is_scanned_pdf(pdf_path: str, sample_pages: int = SCAN_SAMPLE_PAGES,
 def split_text_into_parts(text: str, num_parts: int) -> list[str]:
     """Splits the text into `num_parts` roughly equal pieces (by characters)."""
     chunk_size = math.ceil(len(text) / num_parts)
+    # can be done by merging chunks 
+    # for mvp and speed only returns chunks without merge
     return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
@@ -82,11 +87,6 @@ def extract_page_text(pdf_path: str, page_number: int) -> str:
     Raises ValueError if the page number is invalid.
     """
     with pdfplumber.open(pdf_path) as pdf:
-        total_pages = len(pdf.pages)
-        if page_number < 1 or page_number > total_pages:
-            raise ValueError(
-                f"Page {page_number} is invalid. The PDF has {total_pages} pages."
-            )
         page = pdf.pages[page_number - 1]
         text = page.extract_text(x_tolerance=2) or ""
         return text
@@ -99,7 +99,10 @@ def save_faiss_index(embeddings: np.ndarray, metadata: list[dict], index_path: s
     vectors, `metadata` (one dict per vector, same order) is saved separately
     as JSON to map a search result back to the source book/page/text.
     """
+    # faiss expected type of embedding
     embeddings = np.asarray(embeddings, dtype="float32")
+    # cosine similarity between two vectors is equivalent to their dot product
+    # after L2 normalization, so search is optimized
     faiss.normalize_L2(embeddings)
 
     dim = embeddings.shape[1]

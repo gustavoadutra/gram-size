@@ -18,6 +18,15 @@ class IA:
         """
 
     def response(self, question, chunks):
+        """Generate an answer using the question and retrieved source chunks.
+
+        Args:
+            question: The user's question.
+            chunks: Source excerpts used to formulate the answer.
+
+        Returns:
+            The generated answer text.
+        """
         print("[IA] Generating answer..")
         interaction = self.client.interactions.create(
             model="gemini-3.8-flash",
