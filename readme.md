@@ -4,6 +4,8 @@ A Retrieval-Augmented Generation (RAG) system designed to assist physiotherapist
 
 Optimized for the Portuguese language, the system runs locally on modest hardware (leveraging an **NVIDIA GeForce MX130 GPU** with the `multilingual-e5-small` embedding model loaded in VRAM).
 
+Gemini Flash 3.8 API is used for organize the answer.
+
 ---
 
 ## System Architecture & Tech Stack
