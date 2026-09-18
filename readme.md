@@ -1,12 +1,14 @@
 # Brian - Fisio
 
-RAG system designed to retrieve information from physiotherapy books through a Telegram bot to help physioterapeuts. It creates embeddings using a local model running on an MX130 GPU, with the multilingual-e5-small model loaded in VRAM.
+![Brian - Fisio screenshot](screenshot-2026-09-18_09-48-04.png)
 
-The project uses a retrieval-augmented generation pipeline: PDF files are processed, text is split into chunks with controlled size limits, embeddings are generated, stored in a FAISS index, and then used to answer user questions based on the indexed sources.
+RAG system designed to retrieve information from physiotherapy books through a Telegram bot to help physioterapeuts. It creates embeddings using a local model running on an MX130 GPU, with the multili[...]
+
+The project uses a retrieval-augmented generation pipeline: PDF files are processed, text is split into chunks with controlled size limits, embeddings are generated, stored in a FAISS index, and then [...]
 
 The source documents are in Portuguese, and the retrieval process is optimized for that language.
 
-The main PDF processing logic is implemented in pdf_handler.py. This module is responsible for discovering the books, extracting text, checking for scanned documents, splitting large pages into smaller chunks, generating embeddings, and saving the FAISS index together with the corresponding metadata.
+The main PDF processing logic is implemented in pdf_handler.py. This module is responsible for discovering the books, extracting text, checking for scanned documents, splitting large pages into smalle[...]
 
 The retrieved context is then sent to the LLM, which answers the question using only the relevant information extracted from the indexed books and cites the source material when appropriate.
 
