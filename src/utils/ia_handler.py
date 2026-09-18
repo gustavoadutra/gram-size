@@ -18,10 +18,10 @@ class IA:
         """
 
     def response(self, question, chunks):
+        print("[IA] Generating answer..")
         interaction = self.client.interactions.create(
             model="gemini-3.8-flash",
             input= f"{self.prompt} Pergunta {question} Fontes: {chunks}"
         )
-        print(interaction.output_text)
-        print("=="*20)
+        print(f"[IA] Answer: {interaction.output_text}")
         return interaction.output_text

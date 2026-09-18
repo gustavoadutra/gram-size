@@ -6,7 +6,6 @@ from sentence_transformers import SentenceTransformer
 
 from .ia_handler import IA
 
-logger = logging.getLogger(__name__)
 
 class RAG:
     def __init__(self):
@@ -28,8 +27,7 @@ class RAG:
         chunks = []
         for dist, idx in zip(distances[0], ids[0]):
             item = self.metadata[idx]
-            logger.debug(
-                "Returned chunk: book=%s page=%s",
+            print(f"[RAG] Returned chunk:",
                 item["book_name"],
                 item["page_number"],
             )
